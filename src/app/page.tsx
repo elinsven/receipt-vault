@@ -1,95 +1,194 @@
-import Image from "next/image";
-import styles from "./page.module.css";
+"use client";
+
+import {
+  Box,
+  TextField,
+  FormControlLabel,
+  FormLabel,
+  Radio,
+  RadioGroup,
+  Button,
+  Container,
+  Divider,
+  Typography,
+  List,
+  ListItem,
+} from "@mui/material";
+import { useState } from "react";
+import { Controller, SubmitHandler, useForm } from "react-hook-form";
+
+interface Receipt {
+  receiptTotal: string;
+  restaurant: string;
+  boughtBy: string;
+  paymentOption: string;
+}
 
 export default function Home() {
+  const [receipts, setReceipts] = useState<Receipt[]>([]);
+
+  const { control, handleSubmit, reset } = useForm({
+    defaultValues: {
+      receiptTotal: "",
+      restaurant: "",
+      boughtBy: "e",
+      paymentOption: "50",
+    },
+  });
+
+  const onSubmit: SubmitHandler<Receipt> = (data) => {
+    setReceipts([...receipts, data]);
+    reset();
+  };
+
+  const renderReceiptList = (receipts: Receipt[], title: string) => (
+    <Box flex="1">
+      <Typography variant="h4" component="h2">
+        {title}
+      </Typography>
+      <List>
+        {receipts.map((receipt, index) => (
+          <ListItem key={index}>
+            {receipt.restaurant} {receipt.receiptTotal}kr -{" "}
+            {receipt.paymentOption}%
+          </ListItem>
+        ))}
+      </List>
+    </Box>
+  );
+
+  const getTotalPaid = (person: string) =>
+    receipts
+      .filter((receipt) => receipt.boughtBy === person)
+      .reduce(
+        (total, receipt) =>
+          total +
+          (parseInt(receipt.receiptTotal) * parseInt(receipt.paymentOption)) /
+            100,
+        0
+      );
+
+  const total = {
+    e: getTotalPaid("e"),
+    l: getTotalPaid("l"),
+  };
+
   return (
-    <main className={styles.main}>
-      <div className={styles.description}>
-        <p>
-          Get started by editing&nbsp;
-          <code className={styles.code}>src/app/page.tsx</code>
-        </p>
-        <div>
-          <a
-            href="https://vercel.com?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            By{" "}
-            <Image
-              src="/vercel.svg"
-              alt="Vercel Logo"
-              className={styles.vercelLogo}
-              width={100}
-              height={24}
-              priority
+    <Container component="main" maxWidth="md" sx={{ paddingY: 2 }}>
+      <Typography variant="h3" component="h1">
+        Receipt Vault
+      </Typography>
+      <form onSubmit={handleSubmit(onSubmit)}>
+        <Box display="flex" flexDirection="column" gap={2} marginY={4}>
+          <Controller
+            name="receiptTotal"
+            control={control}
+            rules={{ required: true }}
+            render={({ field }) => (
+              <TextField
+                id="receipt-total"
+                label="Receipt total"
+                variant="outlined"
+                type="number"
+                {...field}
+              />
+            )}
+          />
+
+          <Controller
+            name="restaurant"
+            control={control}
+            render={({ field }) => (
+              <TextField
+                id="restaurant"
+                label="Restaurant"
+                variant="outlined"
+                {...field}
+              />
+            )}
+          />
+
+          <Box display="flex" gap={4}>
+            <Controller
+              name="boughtBy"
+              control={control}
+              render={({ field }) => (
+                <Box>
+                  <FormLabel id="receipt-bought-by-label">
+                    Receipt bought by
+                  </FormLabel>
+                  <RadioGroup
+                    aria-labelledby="receipt-bought-by-label"
+                    defaultValue="e"
+                    {...field}
+                  >
+                    <FormControlLabel value="e" control={<Radio />} label="E" />
+                    <FormControlLabel value="l" control={<Radio />} label="L" />
+                  </RadioGroup>
+                </Box>
+              )}
             />
-          </a>
-        </div>
-      </div>
+            <Controller
+              name="paymentOption"
+              control={control}
+              render={({ field }) => (
+                <Box>
+                  <FormLabel id="payment-option-label">
+                    Payment option
+                  </FormLabel>
+                  <RadioGroup
+                    aria-labelledby="payment-option-label"
+                    defaultValue="50"
+                    {...field}
+                  >
+                    <FormControlLabel
+                      value="50"
+                      control={<Radio />}
+                      label="50%"
+                    />
+                    <FormControlLabel
+                      value="100"
+                      control={<Radio />}
+                      label="100%"
+                    />
+                  </RadioGroup>
+                </Box>
+              )}
+            />
+          </Box>
 
-      <div className={styles.center}>
-        <Image
-          className={styles.logo}
-          src="/next.svg"
-          alt="Next.js Logo"
-          width={180}
-          height={37}
-          priority
-        />
-      </div>
+          <Button variant="contained" type="submit">
+            Add
+          </Button>
+        </Box>
+      </form>
 
-      <div className={styles.grid}>
-        <a
-          href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className={styles.card}
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2>
-            Docs <span>-&gt;</span>
-          </h2>
-          <p>Find in-depth information about Next.js features and API.</p>
-        </a>
+      {total.e > 0 || total.l > 0 ? (
+        <>
+          <Box display="flex" gap={4} marginY={4}>
+            {renderReceiptList(
+              receipts.filter((receipt) => receipt.boughtBy === "e"),
+              "E"
+            )}
+            <Divider orientation="vertical" variant="middle" flexItem />
+            {renderReceiptList(
+              receipts.filter((receipt) => receipt.boughtBy === "l"),
+              "L"
+            )}
+          </Box>
 
-        <a
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className={styles.card}
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2>
-            Learn <span>-&gt;</span>
-          </h2>
-          <p>Learn about Next.js in an interactive course with&nbsp;quizzes!</p>
-        </a>
-
-        <a
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className={styles.card}
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2>
-            Templates <span>-&gt;</span>
-          </h2>
-          <p>Explore starter templates for Next.js.</p>
-        </a>
-
-        <a
-          href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className={styles.card}
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2>
-            Deploy <span>-&gt;</span>
-          </h2>
-          <p>
-            Instantly deploy your Next.js site to a shareable URL with Vercel.
-          </p>
-        </a>
-      </div>
-    </main>
+          <Typography variant="h4" component="span">
+            {total.e > total.l ? "E" : "L"} is expected to receive{" "}
+            <Typography
+              variant="h4"
+              component="span"
+              sx={{ textDecoration: "underline" }}
+            >
+              {Math.abs(total.e - total.l)}kr
+            </Typography>
+          </Typography>
+        </>
+      ) : null}
+    </Container>
   );
 }
